@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5000';
+const API_BASE = window.location.origin;
 
 function showToast(message, isError = false) {
     const toast = document.createElement('div');
