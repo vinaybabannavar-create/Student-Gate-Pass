@@ -35,6 +35,37 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+# Auto-initialize database on startup
+def init_db():
+    conn = get_db_connection()
+    conn.execute('''
+    CREATE TABLE IF NOT EXISTS requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        usn TEXT NOT NULL,
+        roll TEXT,
+        branch TEXT,
+        year_sem TEXT,
+        college TEXT,
+        reason TEXT NOT NULL,
+        ai_priority TEXT,
+        letter TEXT,
+        status TEXT DEFAULT 'pending_teacher',
+        teacher_status TEXT,
+        hod_status TEXT,
+        security_status TEXT,
+        qr TEXT UNIQUE,
+        security_key TEXT UNIQUE,
+        out_time TEXT,
+        expiry TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
 # --- ROUTES FOR HTML TEMPLATES ---
 
 @app.route('/')
