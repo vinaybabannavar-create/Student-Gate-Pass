@@ -1,0 +1,132 @@
+/* Custom glass and gradient effects on top of Tailwind */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #1e1e2f, #252542);
+    color: white;
+    min-height: 100vh;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    background: #4CAF50;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+    z-index: 1000;
+}
+
+.toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast.error {
+    background: #F44336;
+}
+
+/* Spinner Animation */
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 4px solid #fff;
+    width: 24px;
+    height: 24px;
+    -webkit-animation: spin 1s linear infinite; /* Safari */
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.priority-high { color: #ff5252; font-weight: bold; }
+.priority-medium { color: #fb8c00; font-weight: bold; }
+.priority-low { color: #4caf50; font-weight: bold; }
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-pending { background: #ffb74d; color: #000; }
+.status-approved { background: #81c784; color: #000; }
+.status-rejected { background: #e57373; color: #000; }
+.status-used { background: #9e9e9e; color: #000; }
+
+.camera-scan-line {
+    width: 100%;
+    height: 2px;
+    background: #00ff00;
+    position: absolute;
+    top: 50%;
+    box-shadow: 0 0 10px #00ff00;
+    animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+    0% { top: 0; }
+    50% { top: 100%; }
+    100% { top: 0; }
+}
+
+/* Mobile-First Custom Classes */
+.mobile-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: transform 0.2s;
+}
+
+.mobile-card:active {
+    transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+    .glass-card {
+        padding: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.75rem !important;
+    }
+
+    /* Hide desktop tables, show mobile cards */
+    .desktop-only {
+        display: none !important;
+    }
+    
+    .mobile-only {
+        display: block !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-only {
+        display: none !important;
+    }
+}

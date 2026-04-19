@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Smart Gate Pass</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="p-6 bg-gradient-to-br from-[#12121c] to-[#1e1e2f]" onload="startDashboardPolling('teacher')">
+
+    <div class="max-w-6xl mx-auto">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-10 pl-6 border-l-4 border-blue-500">
+            <div>
+                <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">Teacher Dashboard</h1>
+                <p class="text-gray-400 mt-1">Review student gate pass applications</p>
+            </div>
+            <div class="flex items-center space-x-3 bg-gray-800 p-2 rounded-full px-4 shadow-lg border border-gray-700">
+                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold">T</div>
+                <span class="text-sm font-medium pr-2">Prof. Teacher</span>
+            </div>
+        </div>
+        
+        <!-- Alerts/Stats banner -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div class="glass-card p-5 rounded-xl border border-blue-500/20 shadow-lg">
+                   <p class="text-sm text-gray-400 mb-1">Applications Awaiting Review</p>
+                   <p class="text-3xl font-bold text-white" id="statPendingTeacher">-</p>
+              </div>
+              <div class="glass-card p-5 rounded-xl border border-teal-500/20 shadow-lg">
+                   <p class="text-sm text-gray-400 mb-1">Approved & Outgoing Today</p>
+                   <p class="text-3xl font-bold text-white" id="statApprovedTodayT">-</p>
+              </div>
+        </div>
+
+        <!-- Requests View (Desktop Table / Mobile Cards) -->
+        <div class="glass-card rounded-xl overflow-hidden shadow-2xl">
+            <!-- Desktop View -->
+            <div class="overflow-x-auto desktop-only">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-800/80 text-gray-300 text-sm uppercase tracking-wider">
+                            <th class="p-4 font-medium">Student Name</th>
+                            <th class="p-4 font-medium">Reason</th>
+                            <th class="p-4 font-medium">AI Priority</th>
+                            <th class="p-4 font-medium">Letter</th>
+                            <th class="p-4 font-medium w-48">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestsBody" class="text-gray-200">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Mobile View -->
+            <div id="requestsCards" class="mobile-only p-4 space-y-4">
+                 <!-- Populated by JS as Cards -->
+                 <div class="text-center py-10 text-gray-500 italic">No pending requests.</div>
+            </div>
+        </div>
+        
+        <!-- Teacher Action History -->
+        <div class="mt-12 glass-card rounded-xl overflow-hidden shadow-2xl border border-white/5 opacity-80 hover:opacity-100 transition-opacity">
+            <div class="p-4 bg-gray-900/40 border-b border-gray-800 flex justify-between items-center">
+                 <span class="font-semibold text-gray-400 flex items-center">
+                     <i class="fa-solid fa-clock-rotate-left mr-2"></i> Your Recent Actions (History)
+                 </span>
+            </div>
+            <div class="overflow-x-auto desktop-only">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-900/20 text-gray-500 text-[10px] uppercase tracking-wider">
+                            <th class="p-4 font-medium">Student Name</th>
+                            <th class="p-4 font-medium">Decision</th>
+                            <th class="p-4 font-medium">Reason</th>
+                            <th class="p-4 font-medium w-32">Manage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacherHistoryBody" class="text-gray-400 text-sm italic font-light">
+                        <!-- Populated by JS -->
+                        <tr><td colspan="4" class="p-8 text-center text-gray-600">Loading your history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile View History -->
+            <div id="teacherHistoryCards" class="mobile-only p-4 space-y-3">
+                 <!-- Populated by JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Letter View Modal -->
+    <div id="letterModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div class="glass-card p-10 rounded-3xl max-w-2xl w-full mx-4 border border-white/20 shadow-2xl relative">
+            <button onclick="document.getElementById('letterModal').classList.add('hidden')" class="absolute top-6 right-6 text-gray-400 hover:text-white transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h2 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-6">Formal Application Letter</h2>
+            <div id="modalLetterContent" class="bg-gray-900/90 p-8 rounded-2xl text-lg text-gray-200 h-[500px] overflow-y-auto whitespace-pre-wrap border border-white/5 leading-relaxed font-serif shadow-inner scroll-smooth" style="scrollbar-width: thin;"></div>
+            <div class="mt-8 flex justify-end">
+                <button onclick="document.getElementById('letterModal').classList.add('hidden')" class="px-8 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-bold text-white transition-all border border-gray-600 shadow-lg">Close Letter</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

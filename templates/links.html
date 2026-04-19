@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Gate Pass - Access Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900 via-slate-950 to-black">
+
+    <div class="max-w-4xl w-full">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-2">ACCESS PORTAL</h1>
+            <p class="text-gray-400 uppercase tracking-[0.3em] text-xs">Smart Gate Pass Central Directory</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Link Card: Student -->
+            <div class="glass-card p-6 rounded-3xl border-l-4 border-l-blue-500 shadow-2xl">
+                <i class="fa-solid fa-graduation-cap text-3xl mb-4 text-blue-500"></i>
+                <h3 class="text-xl font-bold mb-1">Student Dashboard</h3>
+                <p class="text-gray-500 text-xs mb-4 uppercase tracking-widest">For applying gate passes</p>
+                <div class="bg-black/40 p-3 rounded-xl flex items-center justify-between">
+                    <code class="text-[10px] text-blue-300 truncate mr-2">{{ base_url }}/</code>
+                    <button onclick="copyLink('{{ base_url }}/')" class="p-2 hover:text-white text-gray-500 transition"><i class="fa-solid fa-copy"></i></button>
+                </div>
+            </div>
+
+            <!-- Link Card: Teacher -->
+            <div class="glass-card p-6 rounded-3xl border-l-4 border-l-teal-500 shadow-2xl">
+                <i class="fa-solid fa-chalkboard-user text-3xl mb-4 text-teal-500"></i>
+                <h3 class="text-xl font-bold mb-1">Teacher Dashboard</h3>
+                <p class="text-gray-500 text-xs mb-4 uppercase tracking-widest">Initial review & approval</p>
+                <div class="bg-black/40 p-3 rounded-xl flex items-center justify-between">
+                    <code class="text-[10px] text-teal-300 truncate mr-2">{{ base_url }}/teacher</code>
+                    <button onclick="copyLink('{{ base_url }}/teacher')" class="p-2 hover:text-white text-gray-500 transition"><i class="fa-solid fa-copy"></i></button>
+                </div>
+            </div>
+
+            <!-- Link Card: HOD -->
+            <div class="glass-card p-6 rounded-3xl border-l-4 border-l-purple-500 shadow-2xl">
+                <i class="fa-solid fa-user-shield text-3xl mb-4 text-purple-500"></i>
+                <h3 class="text-xl font-bold mb-1">HOD Dashboard</h3>
+                <p class="text-gray-500 text-xs mb-4 uppercase tracking-widest">Final QR authorization</p>
+                <div class="bg-black/40 p-3 rounded-xl flex items-center justify-between">
+                    <code class="text-[10px] text-purple-300 truncate mr-2">{{ base_url }}/hod</code>
+                    <button onclick="copyLink('{{ base_url }}/hod')" class="p-2 hover:text-white text-gray-500 transition"><i class="fa-solid fa-copy"></i></button>
+                </div>
+            </div>
+
+            <!-- Link Card: Security -->
+            <div class="glass-card p-6 rounded-3xl border-l-4 border-l-green-500 shadow-2xl">
+                <i class="fa-solid fa-shield-halved text-3xl mb-4 text-green-500"></i>
+                <h3 class="text-xl font-bold mb-1">Security Terminal</h3>
+                <p class="text-gray-500 text-xs mb-4 uppercase tracking-widest">QR scanning & verification</p>
+                <div class="bg-black/40 p-3 rounded-xl flex items-center justify-between">
+                    <code class="text-[10px] text-green-300 truncate mr-2">{{ base_url }}/security</code>
+                    <button onclick="copyLink('{{ base_url }}/security')" class="p-2 hover:text-white text-gray-500 transition"><i class="fa-solid fa-copy"></i></button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="mt-12 text-center">
+            <p class="text-gray-600 text-[10px] uppercase tracking-[0.5em]">Gate Pass Infrastructure © 2026</p>
+        </div>
+    </div>
+
+    <script>
+        function copyLink(url) {
+            navigator.clipboard.writeText(url);
+            alert('Link copied to clipboard!');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+Flask==3.0.3
+Flask-Cors==4.0.0
+qrcode[pil]==7.4.2
+opencv-python-headless==4.9.0.80
+gunicorn==22.0.0

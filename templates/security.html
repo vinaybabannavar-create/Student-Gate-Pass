@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Verification - Smart Gate Pass</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @media (max-width: 1024px) { .desktop-only { display: none; } }
+        @media (min-width: 1025px) { .mobile-only { display: none; } }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen flex flex-col items-center p-4" onload="startSecurityPolling()">
+
+    <!-- Global Grid Background -->
+    <div class="fixed inset-0" style="background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 30px 30px; z-index: -1;"></div>
+
+    <!-- Main Content Grid -->
+    <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+        
+        <!-- Column 1: Scanner & Active Verification -->
+        <div class="space-y-8">
+            <!-- Scanner Area -->
+            <div class="glass-card rounded-2xl p-8 border border-green-500/30 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,255,0,0.1)] relative overflow-hidden">
+                 
+                 <!-- decorative corner borders -->
+                 <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-green-500"></div>
+                 <div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-green-500"></div>
+                 <div class="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-green-500"></div>
+                 <div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-green-500"></div>
+
+                 <div class="text-center mb-6">
+                     <i class="fa-solid fa-qrcode text-5xl text-green-400 mb-3 drop-shadow-[0_0_10px_rgba(0,255,0,0.5)]"></i>
+                     <h2 class="text-2xl font-bold tracking-widest text-green-400">SYSTEM TERMINAL</h2>
+                     <p class="text-xs text-gray-400 mt-1 uppercase tracking-widest">Input or Scan Pass UUID to Verify</p>
+                 </div>
+
+                 <!-- Web Camera Scanner container -->
+                 <div id="reader" class="mb-4 hidden border-2 border-dashed border-green-500 rounded bg-black"></div>
+                 
+                 <div id="scanTip" class="hidden mb-4 p-2 bg-blue-900/20 border border-blue-500/50 rounded text-[10px] text-blue-300 uppercase tracking-widest text-center">
+                     <i class="fa-solid fa-circle-info mr-1"></i> Tip: For file uploads, crop the image to the QR code for best results.
+                 </div>
+
+                 <button type="button" id="startScanBtn" onclick="startQRScanner()" class="w-full bg-blue-900/50 hover:bg-blue-800 text-blue-400 border border-blue-500 py-2 rounded font-bold tracking-widest transition-all mb-4">
+                     <i class="fa-solid fa-camera mr-2"></i> START CAMERA SCANNER
+                 </button>
+
+                 <form onsubmit="verifyPass(event)" class="w-full space-y-4">
+                     <input type="text" id="qrInput" required class="w-full bg-black/50 border border-green-500/50 text-green-400 text-center py-3 rounded uppercase font-mono tracking-wider focus:outline-none focus:border-green-400 focus:shadow-[0_0_15px_rgba(0,255,0,0.3)] placeholder-green-800" placeholder="ENTER QR HASH ID">
+                     
+                     <button type="submit" id="verifyBtn" class="w-full bg-green-900/50 hover:bg-green-800 text-green-400 border border-green-500 py-3 rounded font-bold tracking-widest transition-all">
+                         VALIDATE QR
+                     </button>
+                 </form>
+            </div>
+
+            <!-- Results Area -->
+            <div class="glass-card rounded-2xl p-8 border border-gray-700 flex flex-col h-full bg-gray-900/80">
+                <h3 class="text-xl font-semibold mb-6 flex items-center border-b border-gray-800 pb-3">
+                    <i class="fa-solid fa-id-card mr-3 text-blue-400"></i> Pass Details
+                </h3>
+
+                <!-- Details hidden until scanned -->
+                <div id="secDetails" class="hidden space-y-4 flex-grow text-sm">
+                     <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                         <p class="text-gray-400 uppercase text-xs mb-1">Student Identity</p>
+                         <p class="text-lg font-bold text-white tracking-wide" id="secName"></p>
+                         <p class="text-sm font-medium text-blue-300 mt-1" id="secDetailsMore"></p>
+                     </div>
+                     
+                     <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                         <p class="text-gray-400 uppercase text-xs mb-1">Authorized Purpose</p>
+                         <p class="text-gray-200" id="secReason"></p>
+                     </div>
+                     
+                     <div class="bg-purple-900/40 p-4 rounded-lg border border-purple-500/50">
+                         <p class="text-purple-300 uppercase text-xs mb-1 tracking-widest font-bold">Secret Security Key</p>
+                         <p class="text-3xl font-mono font-bold text-white tracking-widest" id="secKey"></p>
+                     </div>
+
+                     <!-- Final Confirmation Action -->
+                     <div id="actionCont" class="hidden mt-8">
+                          <button onclick="grantExit()" id="grantBtn" class="w-full py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-black tracking-[0.3em] rounded-xl shadow-[0_0_30px_rgba(34,197,94,0.3)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center uppercase">
+                              <i class="fa-solid fa-person-walking-arrow-right mr-3 text-xl"></i> GRANT EXIT PERMISSION
+                          </button>
+                          <div id="finalResult" class="hidden mt-4">
+                               <!-- injected messages -->
+                          </div>
+                     </div>
+                </div>
+                
+                <div id="placeholder" class="flex-grow flex flex-col items-center justify-center text-gray-600 opacity-50">
+                     <i class="fa-solid fa-shield-halved text-6xl mb-4"></i>
+                     <p class="tracking-widest uppercase font-semibold">Awaiting Scan</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 2: Live Feed of Upcoming Exits -->
+        <div class="glass-card rounded-3xl p-4 lg:p-8 border border-white/5 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-3 animate-ping"></span>
+                        Awaiting Exit
+                    </h2>
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Live background syncing</p>
+                </div>
+            </div>
+
+            <!-- Desktop Table (shorthand) -->
+            <div class="desktop-only overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-gray-500 text-[10px] uppercase tracking-[0.2em] border-b border-gray-800">
+                            <th class="pb-4 font-semibold">Student</th>
+                            <th class="pb-4 font-semibold">Secret Key</th>
+                            <th class="pb-4 font-semibold">Reason</th>
+                            <th class="pb-4 font-semibold text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="upcomingExitsBody" class="text-sm">
+                        <!-- Polled by JS -->
+                        <tr><td colspan="4" class="py-10 text-center text-gray-600 italic text-xs uppercase tracking-widest">Initializing live feed...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Feed (Cards) -->
+            <div id="upcomingExitsCards" class="mobile-only space-y-4">
+                 <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Extra logic to hide placeholder on valid scan -->
+    <script>
+        const originalVerifyPass = verifyPass;
+        verifyPass = async function(e) {
+             document.getElementById('placeholder').style.display = 'none';
+             document.getElementById('faceVerificationCont').classList.add('hidden');
+             document.getElementById('finalResult').classList.add('hidden');
+             await originalVerifyPass(e);
+        }
+    </script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script>
+        // Camera Scanner logic
+        let html5QrCode;
+        
+        async function startQRScanner() {
+            const readerDiv = document.getElementById('reader');
+            const startBtn = document.getElementById('startScanBtn');
+            const scanTip = document.getElementById('scanTip');
+            
+            readerDiv.classList.remove('hidden');
+            startBtn.classList.add('hidden');
+            scanTip.classList.remove('hidden');
+            scanTip.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Initializing High-Quality Camera...';
+            
+            html5QrCode = new Html5Qrcode("reader");
+            
+            // Higher quality configuration
+            const config = { 
+                fps: 20, // Faster scanning
+                qrbox: { width: 280, height: 280 },
+                aspectRatio: 1.0
+            };
+
+            // Request HD resolution if possible to avoid blur
+            const videoConstraints = {
+                facingMode: "environment",
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            };
+
+            try {
+                await html5QrCode.start(videoConstraints, config, onScanSuccess);
+                scanTip.innerHTML = '<i class="fa-solid fa-circle-info mr-1"></i> Camera Active: Align QR code within the frame.';
+                showToast("HD Camera Active");
+            } catch (err) {
+                console.error("Camera start failed", err);
+                scanTip.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1 text-red-400"></i> Camera Error. Falling back to compatibility mode...';
+                
+                // Fallback to simpler scanner if HD fails
+                try {
+                    const scanner = new Html5QrcodeScanner("reader", { 
+                        fps: 10, 
+                        qrbox: { width: 250, height: 250 },
+                        rememberLastUsedCamera: true
+                    });
+                    scanner.render(onScanSuccess, (err) => {});
+                    scanTip.classList.add('hidden');
+                } catch (fallbackErr) {
+                    showToast("Critical Camera Error", true);
+                }
+            }
+        }
+
+        function onScanSuccess(decodedText) {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('reader').classList.add('hidden');
+                    document.getElementById('startScanBtn').classList.remove('hidden');
+                    document.getElementById('scanTip').classList.add('hidden');
+                }).catch(err => console.error("Error stopping scanner", err));
+            } else {
+                // For the Html5QrcodeScanner fallback
+                document.getElementById('reader').classList.add('hidden');
+                document.getElementById('startScanBtn').classList.remove('hidden');
+                document.getElementById('scanTip').classList.add('hidden');
+            }
+            
+            // Clean the decoded text in case it's a full URL
+            let qrValue = decodedText;
+            if (qrValue.includes('/')) {
+                qrValue = qrValue.split('/').pop();
+            }
+            
+            document.getElementById('qrInput').value = qrValue;
+            showToast("Scan Success: ID Extracted");
+            
+            // Trigger verification
+            const verifyBtn = document.getElementById('verifyBtn');
+            verifyBtn.click();
+        }
+    </script>
+    <script src="/static/script.js"></script>
+</body>
+</html>
