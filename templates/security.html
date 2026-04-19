@@ -141,9 +141,14 @@
     <script>
         const originalVerifyPass = verifyPass;
         verifyPass = async function(e) {
-             document.getElementById('placeholder').style.display = 'none';
-             document.getElementById('faceVerificationCont').classList.add('hidden');
-             document.getElementById('finalResult').classList.add('hidden');
+             const placeholder = document.getElementById('placeholder');
+             const faceCont = document.getElementById('faceVerificationCont');
+             const finalRes = document.getElementById('finalResult');
+             
+             if (placeholder) placeholder.style.display = 'none';
+             if (faceCont) faceCont.classList.add('hidden');
+             if (finalRes) finalRes.classList.add('hidden');
+             
              await originalVerifyPass(e);
         }
     </script>

@@ -51,16 +51,38 @@ def init_db():
         ai_priority TEXT,
         letter TEXT,
         status TEXT DEFAULT 'pending_teacher',
-        teacher_status TEXT,
-        hod_status TEXT,
-        security_status TEXT,
+        teacher_status TEXT DEFAULT 'pending',
+        hod_status TEXT DEFAULT 'pending',
+        security_status TEXT DEFAULT 'pending',
         qr TEXT UNIQUE,
         security_key TEXT UNIQUE,
         out_time TEXT,
-        expiry TEXT,
+        expiry_time TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
     ''')
+    
+    # Migration: Ensure all columns exist for older databases
+    columns_to_add = [
+        ('teacher_status', "TEXT DEFAULT 'pending'"),
+        ('hod_status', "TEXT DEFAULT 'pending'"),
+        ('security_status', "TEXT DEFAULT 'pending'"),
+        ('expiry_time', "TEXT")
+    ]
+    
+    for col_name, col_def in columns_to_add:
+        try:
+            conn.execute(f"ALTER TABLE requests ADD COLUMN {col_name} {col_def}")
+        except sqlite3.OperationalError:
+            pass # already exists
+        
+    # Ensure defaults for old records
+    try:
+        conn.execute("UPDATE requests SET teacher_status = 'pending' WHERE teacher_status IS NULL")
+        conn.execute("UPDATE requests SET hod_status = 'pending' WHERE hod_status IS NULL")
+    except:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -138,7 +160,7 @@ def teacher_requests():
 @app.route('/teacher/approve/<int:req_id>', methods=['POST'])
 def teacher_approve(req_id):
     conn = get_db_connection()
-    conn.execute("UPDATE requests SET status = 'pending_hod' WHERE id = ?", (req_id,))
+    conn.execute("UPDATE requests SET status = 'pending_hod', teacher_status = 'approved' WHERE id = ?", (req_id,))
     conn.commit()
     conn.close()
     return jsonify({'message': 'Approved by teacher'})
@@ -146,7 +168,7 @@ def teacher_approve(req_id):
 @app.route('/teacher/reject/<int:req_id>', methods=['POST'])
 def teacher_reject(req_id):
     conn = get_db_connection()
-    conn.execute("UPDATE requests SET status = 'rejected' WHERE id = ?", (req_id,))
+    conn.execute("UPDATE requests SET status = 'rejected', teacher_status = 'rejected' WHERE id = ?", (req_id,))
     conn.commit()
     conn.close()
     return jsonify({'message': 'Rejected by teacher'})
@@ -163,7 +185,7 @@ def hod_requests():
 def hod_approve(req_id):
     qr_id = str(uuid.uuid4())
     security_key = uuid.uuid4().hex[:6].upper()
-    expiry_time = datetime.datetime.now() + datetime.timedelta(hours=2)
+    expiry_time = (datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')
 
     # Use BASE_URL for the scannable QR code
     pass_url = f'{BASE_URL}/pass/{qr_id}'
@@ -172,7 +194,7 @@ def hod_approve(req_id):
     conn = get_db_connection()
     conn.execute("""
         UPDATE requests 
-        SET status = 'approved', qr = ?, security_key = ?, expiry_time = ? 
+        SET status = 'approved', hod_status = 'approved', qr = ?, security_key = ?, expiry_time = ? 
         WHERE id = ?
     """, (qr_id, security_key, expiry_time, req_id))
     conn.commit()
@@ -183,7 +205,7 @@ def hod_approve(req_id):
 @app.route('/hod/reject/<int:req_id>', methods=['POST'])
 def hod_reject(req_id):
     conn = get_db_connection()
-    conn.execute("UPDATE requests SET status = 'rejected' WHERE id = ?", (req_id,))
+    conn.execute("UPDATE requests SET status = 'rejected', hod_status = 'rejected' WHERE id = ?", (req_id,))
     conn.commit()
     conn.close()
     return jsonify({'message': 'Rejected by HOD'})
@@ -206,10 +228,10 @@ def teacher_history():
 def get_stats():
     conn = get_db_connection()
     stats = {
-        'pending_teacher': conn.execute("SELECT COUNT(*) FROM requests WHERE teacher_status = 'pending'").fetchone()[0],
-        'pending_hod': conn.execute("SELECT COUNT(*) FROM requests WHERE teacher_status = 'approved' AND status = 'pending'").fetchone()[0],
-        'approved_today': conn.execute("SELECT COUNT(*) FROM requests WHERE status = 'approved' OR status = 'used'").fetchone()[0],
-        'rejected': conn.execute("SELECT COUNT(*) FROM requests WHERE teacher_status = 'rejected' OR status = 'rejected'").fetchone()[0]
+        'pending_teacher': conn.execute("SELECT COUNT(*) FROM requests WHERE status = 'pending_teacher'").fetchone()[0],
+        'pending_hod': conn.execute("SELECT COUNT(*) FROM requests WHERE status = 'pending_hod'").fetchone()[0],
+        'approved_today': conn.execute("SELECT COUNT(*) FROM requests WHERE status IN ('approved', 'used')").fetchone()[0],
+        'rejected': conn.execute("SELECT COUNT(*) FROM requests WHERE status = 'rejected'").fetchone()[0]
     }
     conn.close()
     return jsonify(stats)
@@ -250,7 +272,8 @@ def student_status(req_id):
     if req:
          req_dict = dict(req)
          if req_dict['status'] == 'approved' and req_dict['qr']:
-              pass_url = f'http://{LOCAL_IP}:{PORT}/pass/{req_dict["qr"]}'
+              # Use consistent base URL
+              pass_url = f'{BASE_URL}/pass/{req_dict["qr"]}'
               req_dict['qr_image'] = qr_generator.generate_secure_qr(pass_url)
          return jsonify(req_dict)
     return jsonify({'error': 'Not found'}), 404
