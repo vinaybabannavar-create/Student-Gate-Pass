@@ -12,6 +12,11 @@ import face_verify
 app = Flask(__name__)
 CORS(app)
 
+UPLOAD_FOLDER = 'static/uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 # Detect local IP so QR codes route back to this machine on LAN
 def get_local_ip():
     try:
@@ -50,6 +55,7 @@ def init_db():
         reason TEXT NOT NULL,
         ai_priority TEXT,
         letter TEXT,
+        document_path TEXT,
         status TEXT DEFAULT 'pending_teacher',
         teacher_status TEXT DEFAULT 'pending',
         hod_status TEXT DEFAULT 'pending',
@@ -61,9 +67,10 @@ def init_db():
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
     ''')
-    
+
     # Migration: Ensure all columns exist for older databases
     columns_to_add = [
+        ('document_path', "TEXT"),
         ('teacher_status', "TEXT DEFAULT 'pending'"),
         ('hod_status', "TEXT DEFAULT 'pending'"),
         ('security_status', "TEXT DEFAULT 'pending'"),
@@ -116,17 +123,36 @@ def security_dashboard():
 # 1. Student Applies
 @app.route('/apply', methods=['POST'])
 def apply():
-    data = request.json
-    name = data.get('name')
-    usn = data.get('usn')
-    roll = data.get('roll')
-    branch = data.get('branch')
-    year_sem = data.get('year_sem')
-    college = data.get('college')
-    reason = data.get('reason')
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        name = request.form.get('name')
+        usn = request.form.get('usn')
+        roll = request.form.get('roll')
+        branch = request.form.get('branch')
+        year_sem = request.form.get('year_sem')
+        college = request.form.get('college')
+        reason = request.form.get('reason')
+        doc = request.files.get('document')
+    else:
+        # Fallback for old json requests just in case
+        data = request.json or {}
+        name = data.get('name')
+        usn = data.get('usn')
+        roll = data.get('roll')
+        branch = data.get('branch')
+        year_sem = data.get('year_sem')
+        college = data.get('college')
+        reason = data.get('reason')
+        doc = None
 
     if not name or not reason:
         return jsonify({'error': 'Name and Reason are required'}), 400
+
+    doc_path = None
+    if doc and doc.filename:
+        ext = doc.filename.rsplit('.', 1)[-1]
+        filename = f"{uuid.uuid4().hex}.{ext}"
+        doc.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        doc_path = f"/static/uploads/{filename}"
 
     # AI Processing
     ai_priority = ai_module.analyze_reason(reason)
@@ -135,9 +161,9 @@ def apply():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO requests (name, branch, year_sem, usn, roll, college, reason, ai_priority, letter, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_teacher')
-    ''', (name, branch, year_sem, usn, roll, college, reason, ai_priority, letter))
+        INSERT INTO requests (name, branch, year_sem, usn, roll, college, reason, ai_priority, letter, document_path, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_teacher')
+    ''', (name, branch, year_sem, usn, roll, college, reason, ai_priority, letter, doc_path))
     request_id = cursor.lastrowid
     conn.commit()
     conn.close()

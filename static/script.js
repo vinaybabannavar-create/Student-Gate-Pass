@@ -31,10 +31,23 @@ async function submitApplication(e) {
     btn.disabled = true;
 
     try {
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('usn', usn);
+        formData.append('roll', roll);
+        formData.append('branch', branch);
+        formData.append('year_sem', year_sem);
+        formData.append('college', college);
+        formData.append('reason', reason);
+
+        const docInput = document.getElementById('document');
+        if (docInput && docInput.files.length > 0) {
+            formData.append('document', docInput.files[0]);
+        }
+
         const res = await fetch(`${API_BASE}/apply`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, usn, roll, branch, year_sem, college, reason })
+            body: formData
         });
         const data = await res.json();
         
@@ -165,7 +178,8 @@ async function loadDashboardRequests(type, isSilent = false) {
                     <td class="p-3 text-sm text-gray-300 max-w-xs truncate" title="${req.reason}">${req.reason}</td>
                     <td class="p-3"><span class="priority-${req.ai_priority.toLowerCase()} font-bold">${req.ai_priority}</span></td>
                     <td class="p-3">
-                        <button class="text-blue-400 font-semibold hover:text-blue-300 underline text-xs" onclick="viewLetter(\`${req.letter.replace(/`/g, '\\`').replace(/\n/g, '\\n')}\`)">View Details</button>
+                        <button class="text-blue-400 font-semibold hover:text-blue-300 underline text-xs block mb-1" onclick="viewLetter(\`${req.letter.replace(/`/g, '\\`').replace(/\n/g, '\\n')}\`)">View Letter</button>
+                        ${req.document_path ? `<a href="${req.document_path}" target="_blank" class="text-green-400 font-semibold hover:text-green-300 underline text-[10px] block"><i class="fa-solid fa-paperclip"></i> View Document</a>` : ''}
                     </td>
                     <td class="p-3 flex items-center space-x-1">
                         <button onclick="handleAction('${type}', 'approve', ${req.id})" class="px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-[10px] text-white transition font-bold uppercase">Approve</button>
@@ -192,7 +206,10 @@ async function loadDashboardRequests(type, isSilent = false) {
                     </div>
                     <p class="text-sm text-gray-300 mb-4 line-clamp-2 italic">"${req.reason}"</p>
                     <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-                        <button class="text-blue-400 text-xs font-bold uppercase tracking-wider" onclick="viewLetter(\`${req.letter.replace(/`/g, '\\`').replace(/\n/g, '\\n')}\`)">Read Letter</button>
+                        <div class="flex flex-col gap-1">
+                            <button class="text-blue-400 text-xs font-bold uppercase tracking-wider text-left" onclick="viewLetter(\`${req.letter.replace(/`/g, '\\`').replace(/\n/g, '\\n')}\`)">Read Letter</button>
+                            ${req.document_path ? `<a href="${req.document_path}" target="_blank" class="text-green-400 text-[10px] font-bold uppercase tracking-wider mt-1"><i class="fa-solid fa-file"></i> Open Doc</a>` : ''}
+                        </div>
                         <div class="flex space-x-2">
                             <button onclick="handleAction('${type}', 'approve', ${req.id})" class="p-3 bg-green-600 text-white rounded-lg transition-transform active:scale-95 shadow-lg"><i class="fa-solid fa-check"></i></button>
                             <button onclick="handleAction('${type}', 'reject', ${req.id})" class="p-3 bg-red-600/20 text-red-500 border border-red-500/30 rounded-lg transition-transform active:scale-95"><i class="fa-solid fa-xmark"></i></button>
